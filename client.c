@@ -12,10 +12,53 @@
 #include <arpa/inet.h>
 
 int sockfd=0;
-void *ThreadSend(void*);
-void *ThreadRecv(void*);
-void *downfileRecv(void*);
-void *downfileSend(void*);
+void *tSend(void *err)
+{
+	char message[512]={};
+	char user[80]={};
+	char arg[5];
+	while(1)
+	{
+		fgets(arg,5,stdin);
+		arg[strlen(arg)-1]='\0';
+		send(sockfd,arg,sizeof(arg),0);
+		if(strcmp(arg,"c")==0)
+		{
+			fgets(user,80,stdin);
+			username[strlen(user)-1]='\0';
+			send(sockfd,user,sizeof(user),0);
+			fgets(message,512,stdin);
+			message[strlen(message)-1]='\0';
+			send(sockfd,message,sizeof(message),0);
+		}
+		else if(strcmp(arg,"s")==0)
+		{
+			fgets(message,512,stdin);
+			message[strlen(message)-1]='\0';
+			send(sockfd,message,sizeof(message),0);
+		}
+		
+	}
+}
+
+void *tRecive(void *arg)
+{
+	int err;
+	char message[512];
+	while(1)
+	{
+		err=recv(sockfd,message,sizeof(message),0);
+		if(err==-1)
+		{
+			sleep(500);
+			continue;
+		}
+		if(strlen(message)!=0)
+			printf("%s\n",message);
+		else
+			sleep(100);
+	}
+}
 
 int main(int argc , char *argv[])
 {
@@ -41,7 +84,7 @@ int main(int argc , char *argv[])
 	int err=connect(sockfd,(struct sockaddr*)&info,sizeof(info));
 	if(err==-1)
 	{
-		perror("Connection Error");
+		perror("Connect Error");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -51,8 +94,8 @@ int main(int argc , char *argv[])
 	printf("%s",receiveMessage);
 	
 	pthread_t tid1,tid2;
-	pthread_create(&tid1,NULL,ThreadSend,NULL);
-	pthread_create(&tid2,NULL,ThreadRecv,NULL);
+	pthread_create(&tid1,NULL,tSend,NULL);
+	pthread_create(&tid2,NULL,tRecive,NULL);
 	
 	pthread_join(tid2,NULL);
 	printf("Close socket\n");
@@ -60,99 +103,3 @@ int main(int argc , char *argv[])
 	return 0;
 }
 
-void *ThreadSend(void *err)
-{
-	char message[512]={};
-	char username[20]={};
-	char arg[5];
-	while(1)
-	{
-		fgets(arg,5,stdin);
-		arg[strlen(arg)-1]='\0';
-		send(sockfd,arg,sizeof(arg),0);
-		if(strcmp(arg,"c")==0)
-		{
-			fgets(username,20,stdin);
-			username[strlen(username)-1]='\0';
-			send(sockfd,username,sizeof(username),0);
-			fgets(message,512,stdin);
-			message[strlen(message)-1]='\0';
-			send(sockfd,message,sizeof(message),0);
-		}
-		else if(strcmp(arg,"s")==0)
-		{
-			fgets(message,512,stdin);
-			message[strlen(message)-1]='\0';
-			send(sockfd,message,sizeof(message),0);
-		}
-		else if(strcmp(arg,"t")==0)
-		{
-			fgets(username,20,stdin);
-			username[strlen(username)-1]='\0';
-			send(sockfd,username,sizeof(username),0);
-			fgets(message,512,stdin);
-			message[strlen(message)-1]='\0';
-			FILE *fp=fopen(message,"rb");
-			if(fp==NULL)
-			{
-				char err[5]={"err"};
-				send(sockfd,err,sizeof(err),0);
-				continue;
-			}
-			else
-			{
-				send(sockfd,message,sizeof(username),0);
-				printf("已傳送檔案要求，等待對方接收。\n");
-				fclose(fp);
-			}
-		}
-	}
-}
-
-void *ThreadRecv(void *arg)
-{
-	int err;
-	char message[512];
-	while(1)
-	{
-		err=recv(sockfd,message,sizeof(message),0);
-		if(err==-1)
-		{
-			sleep(500);
-			continue;
-		}
-		if(strlen(message)!=0)
-			printf("%s\n",message);
-		else
-			sleep(100);
-	}
-}
-void *downfileRecv(void *arg)
-{
-	FILE *fp=(FILE*)arg;
-	char buffer[1024];
-	int nCount;
-	while(1)
-	{
-		nCount=recv(sockfd,buffer,1024,0);
-		fwrite(buffer,nCount,1,fp);
-		if(feof(fp))
-			break;
-	}
-	printf("fuck?");
-	fclose(fp);
-}
-void *downfileSend(void *arg)
-{
-	FILE *fp=(FILE*)arg;
-	char buffer[1024];
-	int nCount;
-	while(1)
-	{
-		nCount=fread(buffer,1024,1,fp);
-		send(sockfd,buffer,nCount,0);
-		if(feof(fp))
-			break;
-	}
-	fclose(fp);
-}
