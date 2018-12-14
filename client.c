@@ -25,7 +25,7 @@ void *tSend(void *err)
 		if(strcmp(arg,"c")==0)
 		{
 			fgets(user,80,stdin);
-			username[strlen(user)-1]='\0';
+			user[strlen(user)-1]='\0';
 			send(sockfd,user,sizeof(user),0);
 			fgets(message,512,stdin);
 			message[strlen(message)-1]='\0';
