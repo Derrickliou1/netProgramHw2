@@ -85,7 +85,7 @@ void *ThreadRecv(void* err)
 	while(1)
 	{	
 		recv(thisfd->fd,receiveMessage,sizeof(receiveMessage),0);
-		if(strcmp("s",receiveMessage)==0)
+		if(strcmp("c",receiveMessage)==0)
 		{
 			recv(thisfd->fd,receiveMessage,sizeof(receiveMessage),0);
 			char message[512]={};
@@ -96,12 +96,12 @@ void *ThreadRecv(void* err)
 			pthread_t tid;
 			pthread_create(&tid,NULL,ThreadSend,thisfd);
 		}
-		else if(strcmp("f",receiveMessage)==0)
+		else if(strcmp("w",receiveMessage)==0)
 		{
 			pthread_t tid;
 			pthread_create(&tid,NULL,ThreadUser,thisfd);
 		}
-		else if(strcmp("c",receiveMessage)==0)
+		else if(strcmp("t",receiveMessage)==0)
 		{
 			char username[20]={};
 			char message[512]={};
@@ -115,56 +115,6 @@ void *ThreadRecv(void* err)
 			strcpy(thisfd->message,message);
 			pthread_t tid;
 			pthread_create(&tid,NULL,ThreadSendPri,thisfd);
-		}
-		else if(strcmp("t",receiveMessage)==0)
-		{
-			char username[20]={};
-			char message[512]={};
-			recv(thisfd->fd,username,sizeof(username),0);
-			strcpy(thisfd->privatename,username);
-			
-			recv(thisfd->fd,receiveMessage,sizeof(receiveMessage),0);
-			if(strcmp(receiveMessage,"err")==0)
-			{
-				char error[512]={"查無此檔案"};
-				strcpy(thisfd->privatename,"");
-				send(thisfd->fd,error,sizeof(error),0);
-				continue;
-			}
-			else
-			{
-				strcat(message,thisfd->name);
-				strcat(message,"向你傳送一個檔案為：");
-				strcat(message,receiveMessage);
-				strcat(message,"，請問是否接收？y/n");
-				strcpy(thisfd->message,message);
-				pthread_t tid;
-				pthread_create(&tid,NULL,ThreadTrans,thisfd);
-			}
-			
-		}
-		else if(strcmp("y",receiveMessage)==0)
-		{
-			if(strcmp(thisfd->privatename,"")==0)
-			{
-				char message[512]={"未有檔案傳輸要求"};
-				send(thisfd->fd,message,sizeof(message),0);
-				continue;
-			}
-			pthread_t tid;
-			pthread_create(&tid,NULL,ThreadTransY,thisfd);
-		}
-		else if(strcmp("n",receiveMessage)==0)
-		{
-			if(strcmp(thisfd->privatename,"")==0)
-			{
-				char message[512]={"未有檔案傳輸要求"};
-				send(thisfd->fd,message,sizeof(message),0);
-				continue;
-			}
-
-			pthread_t tid;
-			pthread_create(&tid,NULL,ThreadRes,thisfd);
 		}
 		else
 		{
@@ -350,7 +300,7 @@ void* client(void* arg)
 	struct LinkListClient *thisfd=node;
 	recv(thisfd->fd,ClientName,sizeof(ClientName),0);
 	strcpy(thisfd->name,ClientName);
-	char FirstSendMessage[2048]={"歡迎進入聊天室 server。\n	f)查看有誰在線上\n	s)送出訊息給所有連到同一server的使用者\n	c)指定傳送訊息給正在線上的某個使用者\n	t)傳送檔案給某一個使用者，對方可決定是否接收\n\n"};
+	char FirstSendMessage[2048]={"歡迎進入聊天室 \n	w)查看有誰在線上\n	c)送出訊息給所有連到同一server的使用者\n	t)指定傳送訊息給正在線上的某個使用者\n\n"};
 	strcat(FirstSendMessage,"你的使用者帳號名稱為：");
 	strncat(FirstSendMessage,ClientName,sizeof(ClientName));
 	strcat(FirstSendMessage,"\n\n");
